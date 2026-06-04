@@ -1,10 +1,16 @@
 <p align="center">
-    <a href="https://croct.com">
-        <img src="https://cdn.croct.io/brand/logo/repo-icon-green.svg" alt="Croct" height="80"/>
-    </a>
-    <br/>
-    <strong>Croct Storyblok Plugin</strong><br/>
-    Bring dynamic, personalized content natively into your Storyblok-powered applications.
+  <a href="https://croct.com" target="_blank">
+    <picture>
+        <source media="(min-width: 769px) and (prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/croct-tech/plug-php/master/.github/assets/header-light.svg">
+        <source media="(min-width: 769px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/croct-tech/plug-php/master/.github/assets/header-dark.svg">
+        <source media="(max-width: 768px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/croct-tech/plug-php/master/.github/assets/header-dark-mobile.svg">
+        <source media="(max-width: 768px) and (prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/croct-tech/plug-php/master/.github/assets/header-light-mobile.svg">
+        <img src="https://raw.githubusercontent.com/croct-tech/plug-php/master/.github/assets/header-light-mobile.svg" alt="Croct Storyblok Plugin" title="Croct Storyblok Plugin" width="100%">
+    </picture>
+  </a>
+  <br/>
+  <strong>Croct Storyblok Plugin</strong><br/>
+  Bring dynamic, personalized content natively into your Storyblok-powered applications.
 </p>
 <div align="center">
     <strong>📘 <a href="https://docs.croct.com/reference/sdk/storyblok/integration">Quick start &rarr;</a></strong>
