@@ -2,86 +2,51 @@
     <a href="https://croct.com">
         <img src="https://cdn.croct.io/brand/logo/repo-icon-green.svg" alt="Croct" height="80"/>
     </a>
-    <br />
-    <strong>PHP Project Title</strong>
-    <br />
-    A brief description about the project.
+    <br/>
+    <strong>Croct Storyblok Plugin</strong><br/>
+    Bring dynamic, personalized content natively into your Storyblok-powered applications.
 </p>
+<div align="center">
+    <strong>📘 <a href="https://docs.croct.com/reference/sdk/storyblok/integration">Quick start &rarr;</a></strong>
+</div>
+<br/>
 <p align="center">
-    <img alt="Language" src="https://img.shields.io/badge/language-PHP-blue" />
-    <img alt="Build" src="https://img.shields.io/badge/build-passing-green" />
-    <img alt="License" src="https://img.shields.io/badge/license-proprietary-lightgrey" />
-    <br />
-    <br />
-    <a href="https://github.com/croct-tech/repository-template-php/releases">📦 Releases</a>
-    ·
-    <a href="https://github.com/croct-tech/repository-template-php/issues">🐞 Report Bug</a>
-    ·
-    <a href="https://github.com/croct-tech/repository-template-php/issues">✨ Request Feature</a>
+    <a href="https://packagist.org/packages/croct/plug-storyblok"><img alt="Version" src="https://img.shields.io/packagist/v/croct/plug-storyblok"/></a>
+    <a href="https://packagist.org/packages/croct/plug-storyblok"><img alt="PHP version" src="https://img.shields.io/packagist/dependency-v/croct/plug-storyblok/php"/></a>
 </p>
 
-# Instructions
+## Introduction
 
-Follow the steps below to create a new repository:
+Croct is a headless CMS that helps you manage content, run AB tests, and personalize experiences without the hassle of complex integrations.
 
-1. Customize the repository
-   1. Click on the _Use this template_ button at the top of this page
-   2. Clone the repository locally 
-   3. Update the `README.md` and `composer.json` with the new package information 
-2. Setup Code Climate
-   1. Add the project to [Croct's code climate organization](https://codeclimate.com/accounts/5e714648faaa9c00fb000081/dashboard)
-   2. Go to **Repo Settings > Badges** and copy the maintainability and coverage badges to the `README.md` 
-   3. Go to **Repo Settings > Test coverage** and copy the "_TEST REPORTER ID_"
-   4. On the Github repository page, go to **Settings > Secrets** and add a secret with name `CODECLIMATE_TESTREPORTER_ID` and the ID from the previous step as value
-3. Setup Repman
-   1. If you are a Repman admin, you need to generate a token for each member. Go to [**Organizations > Croct > Tokens > New Token**](https://app.repman.io/organization/croct/token/new) and click on Generate New Token button.
-   2. If you are a member, you need to configure global authentication to access this organization's packages. With the token in hand, you can authorize Composer with the following command (replace `TOKEN_VALUE` with the actual token):
-
-        ```sh
-        composer config --global --auth http-basic.croct.repo.repman.io token TOKEN_VALUE
-        ```
+This plugin provides seamless integration between Croct and Storyblok, allowing you to deliver personalized content within your Storyblok-managed stories.
 
 ## Installation
 
-We recommend using the package manager [Composer](https://getcomposer.org) to install the package:
+Run this command to install the plugin:
 
 ```sh
-composer require croct/project-php
+composer require croct/plug-storyblok
 ```
 
-## Basic usage
+See our [quick start guide](https://docs.croct.com/reference/sdk/storyblok/integration) for more details.
 
-```php
-use Croct\Project\Example;
+## Documentation
 
-$example = new Example();
-$example->displayBasicUsage();
-```
+Visit our [official documentation](https://docs.croct.com/reference/sdk/storyblok/integration).
 
-## Contributing
+## Support
 
-Contributions to the package are always welcome! 
+Join our official [Slack channel](https://croct.link/community) to get help from the Croct team and other developers.
 
-- Report any bugs or issues on the [issue tracker](https://github.com/croct-tech/project-php/issues).
-- For major changes, please [open an issue](https://github.com/croct-tech/project-php/issues) first to discuss what you would like to change.
-- Please make sure to update tests as appropriate.
+## Contribution
 
-## Testing
+Contributions are always welcome!
 
-Before running the test suites, the development dependencies must be installed:
+- Report any bugs or issues on the [issue tracker](https://github.com/croct-tech/plug-storyblok-php/issues).
+- For major changes, please [open an issue](https://github.com/croct-tech/plug-storyblok-php/issues) first to discuss what you would like to change.
+- Please make sure to update tests as appropriate. Run tests with `composer test`.
 
-```sh
-composer install
-```
+## License
 
-Then, to run all tests:
-
-```sh
-composer test
-```
-
-## Copyright Notice
-
-Copyright © 2015-2020 Croct Limited, All Rights Reserved.
-
-All information contained herein is, and remains the property of Croct Limited. The intellectual, design and technical concepts contained herein are proprietary to Croct Limited s and may be covered by U.S. and Foreign Patents, patents in process, and are protected by trade secret or copyright law. Dissemination of this information or reproduction of this material is strictly forbidden unless prior written permission is obtained from Croct Limited.
+This library is licensed under the [MIT license](LICENSE).

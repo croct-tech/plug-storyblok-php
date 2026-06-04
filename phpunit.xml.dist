@@ -20,7 +20,7 @@
         <ini name="memory_limit" value="-1"/>
     </php>
     <testsuites>
-        <testsuite name="Croct PHP Project Test Suite">
+        <testsuite name="Croct Storyblok Test Suite">
             <directory>./tests/</directory>
         </testsuite>
     </testsuites>
