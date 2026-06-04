@@ -18,7 +18,7 @@
 <br/>
 <p align="center">
     <a href="https://packagist.org/packages/croct/plug-storyblok"><img alt="Version" src="https://img.shields.io/packagist/v/croct/plug-storyblok"/></a>
-    <a href="https://packagist.org/packages/croct/plug-storyblok"><img alt="PHP version" src="https://img.shields.io/packagist/dependency-v/croct/plug-storyblok/php"/></a>
+    <a href="https://github.com/croct-tech/plug-storyblok-php/actions?query=workflow%3A%22Validate+branch%22"><img alt="Build" src="https://github.com/croct-tech/plug-storyblok-php/workflows/Validate%20branch/badge.svg"/></a>
 </p>
 
 ## Introduction
