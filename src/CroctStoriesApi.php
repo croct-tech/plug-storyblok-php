@@ -19,8 +19,8 @@ use Storyblok\Api\StoriesApiInterface as StoriesApi;
  * Decorates the Storyblok Stories API to fetch content from Croct.
  *
  * Every fetched story is scanned for `croct` marker, and that node is replaced with the
- * content fetched from Croct after converting it to the Storyblok shape. On failure it falls back to
- * the original story content, so the page never breaks.
+ * content fetched from Croct after converting it to the Storyblok shape. On failure it falls
+ * back to the original story content, so the page never breaks.
  */
 final class CroctStoriesApi implements StoriesApi
 {

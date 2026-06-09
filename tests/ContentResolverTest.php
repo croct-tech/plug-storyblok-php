@@ -398,7 +398,10 @@ final class ContentResolverTest extends TestCase
     }
 
     /**
-     * @return array<string, array{content: array<string, mixed>, schemas: array<string, mixed>|null}>
+     * @return array<string, array{
+     *     content: array<string, mixed>,
+     *     schemas: array<string, mixed>|null,
+     * }>
      */
     public static function getUnsupportedScenarios(): array
     {

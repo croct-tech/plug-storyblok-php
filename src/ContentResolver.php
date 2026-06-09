@@ -20,7 +20,7 @@ final class ContentResolver
     private $uidGenerator;
 
     /**
-     * @param (callable(): string)|null $uidGenerator Generates the `_uid` of each converted structure.
+     * @param (callable(): string)|null $uidGenerator Generates the `_uid` of each structure.
      */
     public function __construct(?callable $uidGenerator = null)
     {
@@ -73,7 +73,7 @@ final class ContentResolver
      *
      * @param array<array-key, mixed>|null $schema
      *
-     * @return array<array-key, mixed>|null The Storyblok content, or null when it cannot be converted.
+     * @return array<array-key, mixed>|null The Storyblok content, or null if not convertible.
      */
     public function create(mixed $content, ?array $schema): ?array
     {
