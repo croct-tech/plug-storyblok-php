@@ -482,6 +482,23 @@ final class ContentResolverTest extends TestCase
                 ],
                 'schemas' => self::createStructureSchema('title', $text),
             ],
+            'an attribute with a non-array type' => [
+                'content' => [
+                    '_component' => 'page',
+                    'title' => 'Hello',
+                ],
+                'schemas' => [
+                    'root' => [
+                        'type' => 'structure',
+                        'attributes' => [
+                            'title' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                    ],
+                    'definitions' => [],
+                ],
+            ],
             'a union member not in the definition' => [
                 'content' => [
                     '_component' => 'section',
@@ -493,6 +510,23 @@ final class ContentResolverTest extends TestCase
                 'schemas' => self::createStructureSchema('media', [
                     'type' => 'union',
                     'types' => [],
+                ]),
+            ],
+            'a union member that is not a string' => [
+                'content' => [
+                    '_component' => 'section',
+                    'media' => [
+                        'src' => 'https://example.com/photo.jpg',
+                    ],
+                ],
+                'schemas' => self::createStructureSchema('media', [
+                    'type' => 'union',
+                    'types' => [
+                        'image' => [
+                            'type' => 'structure',
+                            'attributes' => [],
+                        ],
+                    ],
                 ]),
             ],
             'a list item that cannot be resolved' => [
@@ -525,6 +559,17 @@ final class ContentResolverTest extends TestCase
                 'schemas' => self::createStructureSchema('header', [
                     'type' => 'reference',
                     'id' => 'missing-definition',
+                ]),
+            ],
+            'a reference without an id' => [
+                'content' => [
+                    '_component' => 'page',
+                    'button' => [
+                        'label' => 'Submit',
+                    ],
+                ],
+                'schemas' => self::createStructureSchema('button', [
+                    'type' => 'reference',
                 ]),
             ],
             'a non-array root' => [
