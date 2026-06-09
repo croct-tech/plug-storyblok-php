@@ -201,11 +201,17 @@ final class ContentResolver
 
             $attribute = $attributes[$key] ?? null;
 
-            if (!\is_array($attribute) || !\is_array($attribute['type'] ?? null)) {
+            if (!\is_array($attribute)) {
                 return null;
             }
 
-            $element = $this->convert($value, $schemas, $attribute['type']);
+            $type = $attribute['type'] ?? null;
+
+            if (!\is_array($type)) {
+                return null;
+            }
+
+            $element = $this->convert($value, $schemas, $type);
 
             if ($element === null) {
                 return null;
@@ -231,11 +237,17 @@ final class ContentResolver
         $member = $content['_type'] ?? null;
         $types = $definition['types'] ?? null;
 
-        if (!\is_string($member) || !\is_array($types) || !\is_array($types[$member] ?? null)) {
+        if (!\is_string($member) || !\is_array($types)) {
             return null;
         }
 
-        return $this->convert([...$content, '_component' => $member], $schemas, $types[$member]);
+        $type = $types[$member] ?? null;
+
+        if (!\is_array($type)) {
+            return null;
+        }
+
+        return $this->convert([...$content, '_component' => $member], $schemas, $type);
     }
 
     /**
@@ -248,11 +260,17 @@ final class ContentResolver
         $id = $definition['id'] ?? null;
         $definitions = $schemas['definitions'] ?? null;
 
-        if (!\is_string($id) || !\is_array($definitions) || !\is_array($definitions[$id] ?? null)) {
+        if (!\is_string($id) || !\is_array($definitions)) {
             return null;
         }
 
-        return $this->convert([...$content, '_component' => $id], $schemas, $definitions[$id]);
+        $reference = $definitions[$id] ?? null;
+
+        if (!\is_array($reference)) {
+            return null;
+        }
+
+        return $this->convert([...$content, '_component' => $id], $schemas, $reference);
     }
 
     /**
