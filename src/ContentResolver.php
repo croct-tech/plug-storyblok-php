@@ -56,26 +56,7 @@ final class ContentResolver
                 return $rest;
             }
 
-            $schema = $response->getMetadata()?->getSchema();
-
-            if ($schema === null) {
-                return $rest;
-            }
-
-            $converted = $this->create($response->getContent(), $schema);
-
-            if ($converted === null) {
-                return $rest;
-            }
-
-            // Fall back to the Storyblok-authored value for schema attributes the Croct content
-            // omits (e.g. optional fields left unset by the variant) so they keep rendering instead
-            // of disappearing from the blok. Storyblok-only fields that are not part of the schema
-            // are still dropped, matching the converted shape.
-            return [
-                ...self::getOmittedFields($rest, $converted, $schema),
-                ...$converted,
-            ];
+            return $this->create($response->getContent(), $response->getMetadata()?->getSchema()) ?? $rest;
         }
 
         $result = [];
@@ -347,40 +328,6 @@ final class ContentResolver
         }
 
         return null;
-    }
-
-    /**
-     * Returns the fallback values for schema attributes the converted content does not provide.
-     *
-     * @param array<array-key, mixed> $fallback
-     * @param array<array-key, mixed> $converted
-     * @param array<string, mixed>    $schema
-     *
-     * @return array<array-key, mixed>
-     */
-    private static function getOmittedFields(array $fallback, array $converted, array $schema): array
-    {
-        $root = $schema['root'] ?? null;
-
-        if (!\is_array($root) || ($root['type'] ?? null) !== 'structure') {
-            return [];
-        }
-
-        $attributes = $root['attributes'] ?? null;
-
-        if (!\is_array($attributes)) {
-            return [];
-        }
-
-        $entries = [];
-
-        foreach (\array_keys($attributes) as $key) {
-            if (!\array_key_exists($key, $converted) && \array_key_exists($key, $fallback)) {
-                $entries[$key] = $fallback[$key];
-            }
-        }
-
-        return $entries;
     }
 
     private static function getComponentName(string $id): ?string
