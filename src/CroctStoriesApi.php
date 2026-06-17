@@ -110,11 +110,11 @@ final class CroctStoriesApi implements StoriesApi
      * Builds the slot fetcher for the given language, always requesting the content schema so the
      * conversion to the Storyblok shape can be schema-driven.
      *
-     * @return callable(string): FetchResponse
+     * @return callable(string): FetchResponse<array<string, mixed>, never, true>
      */
     private function createFetcher(string $language): callable
     {
-        $options = FetchOptions::empty()->withSchema();
+        $options = FetchOptions::defaults()->withSchema();
 
         // Storyblok uses "default" to mean the space's default language.
         if ($language !== 'default') {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Croct\Plug\Storyblok\Tests;
 
+use Croct\Plug\Content\ContentSource;
 use Croct\Plug\Content\SlotMetadata;
 use Croct\Plug\Exception\ContentException;
 use Croct\Plug\FetchResponse;
@@ -1034,10 +1035,15 @@ final class ContentResolverTest extends TestCase
 
     /**
      * @param array<string, mixed>|null $schema
+     *
+     * @return FetchResponse<mixed, mixed, bool>
      */
     private static function createResponse(mixed $content, ?array $schema): FetchResponse
     {
-        return new FetchResponse($content, new SlotMetadata(schema: $schema));
+        return new FetchResponse(
+            $content,
+            new SlotMetadata(version: '1', contentSource: ContentSource::SLOT, schema: $schema),
+        );
     }
 
     /**

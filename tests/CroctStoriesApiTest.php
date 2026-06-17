@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Croct\Plug\Storyblok\Tests;
 
+use Croct\Plug\Content\ContentSource;
 use Croct\Plug\Content\SlotMetadata;
 use Croct\Plug\Exception\ContentException;
 use Croct\Plug\FetchOptions;
@@ -268,6 +269,9 @@ final class CroctStoriesApiTest extends TestCase
         );
     }
 
+    /**
+     * @return FetchResponse<array<string, mixed>, mixed, bool>
+     */
     private static function createBannerResponse(string $headline): FetchResponse
     {
         return new FetchResponse(
@@ -275,7 +279,7 @@ final class CroctStoriesApiTest extends TestCase
                 '_component' => 'banner',
                 'headline' => $headline,
             ],
-            new SlotMetadata(schema: [
+            new SlotMetadata(version: '1', contentSource: ContentSource::SLOT, schema: [
                 'root' => [
                     'type' => 'structure',
                     'attributes' => [

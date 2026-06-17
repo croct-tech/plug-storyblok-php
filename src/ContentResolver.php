@@ -30,7 +30,8 @@ final class ContentResolver
     /**
      * Walks the content tree, replacing every `croct` marker with the fetched, converted content.
      *
-     * @param callable(string): ?FetchResponse $fetcher Fetches the content of a slot by ID.
+     * @param callable(string): ?FetchResponse<mixed, mixed, bool> $fetcher
+     *        Fetches the content of a slot by ID.
      */
     public function resolve(mixed $content, callable $fetcher): mixed
     {
