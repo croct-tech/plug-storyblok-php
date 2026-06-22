@@ -30,9 +30,9 @@ final class CroctStoriesApi implements StoriesApi
 
     private ContentResolver $resolver;
 
-    public function __construct(StoriesApi $inner, Plug $plug, ?ContentResolver $resolver = null)
+    public function __construct(StoriesApi $api, Plug $plug, ?ContentResolver $resolver = null)
     {
-        $this->api = $inner;
+        $this->api = $api;
         $this->plug = $plug;
         $this->resolver = $resolver ?? new ContentResolver();
     }
