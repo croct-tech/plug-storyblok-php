@@ -45,20 +45,6 @@ final class ContentResolver
     }
 
     /**
-     * Converts Croct content to the Storyblok shape using the content schema.
-     *
-     * @param array<array-key, mixed>|null $schema
-     * @param mixed                        $original The original Storyblok content, which tells links
-     *                                               and story relations apart from plain text.
-     *
-     * @return array<array-key, mixed>|null The Storyblok content, or null if not convertible.
-     */
-    public function create(mixed $content, ?array $schema, mixed $original = null): ?array
-    {
-        return $this->createContent($content, $schema, $original, self::collectStories($original));
-    }
-
-    /**
      * @param callable(string): ?FetchResponse<mixed, mixed, bool> $fetcher
      * @param array<string, array<array-key, mixed>>               $stories
      */
@@ -86,7 +72,7 @@ final class ContentResolver
                 return $rest;
             }
 
-            return $this->createContent(
+            return $this->create(
                 $response->getContent(),
                 $response->getMetadata()?->getSchema(),
                 $rest,
@@ -104,12 +90,16 @@ final class ContentResolver
     }
 
     /**
-     * @param array<array-key, mixed>|null           $schema
-     * @param array<string, array<array-key, mixed>> $stories
+     * Converts Croct content to the Storyblok shape using the content schema.
      *
-     * @return array<array-key, mixed>|null
+     * @param array<array-key, mixed>|null           $schema
+     * @param mixed                                  $original The original Storyblok content, which tells
+     *                                                         links and story relations apart from text.
+     * @param array<string, array<array-key, mixed>> $stories  The stories available for story relations.
+     *
+     * @return array<array-key, mixed>|null The Storyblok content, or null if not convertible.
      */
-    private function createContent(mixed $content, ?array $schema, mixed $original, array $stories): ?array
+    private function create(mixed $content, ?array $schema, mixed $original, array $stories): ?array
     {
         if ($schema === null) {
             return null;

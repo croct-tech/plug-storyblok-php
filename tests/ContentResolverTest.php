@@ -434,7 +434,7 @@ final class ContentResolverTest extends TestCase
     #[TestDox('Converts Croct content to the Storyblok shape.')]
     public function testConvertsContent(array $content, array $schemas, array $expected): void
     {
-        self::assertEquals($expected, self::createResolver()->create($content, $schemas));
+        self::assertEquals($expected, self::convert($content, $schemas));
     }
 
     /**
@@ -798,10 +798,15 @@ final class ContentResolverTest extends TestCase
      * @param array<string, mixed>|null $schemas
      */
     #[DataProvider('getUnsupportedScenarios')]
-    #[TestDox('Returns null for content that cannot be converted.')]
-    public function testReturnsNullForUnsupportedContent(array $content, ?array $schemas): void
+    #[TestDox('Keeps the original content when the content cannot be converted.')]
+    public function testKeepsOriginalForUnsupportedContent(array $content, ?array $schemas): void
     {
-        self::assertNull(self::createResolver()->create($content, $schemas));
+        $original = [
+            'component' => 'page',
+            'title' => 'Original',
+        ];
+
+        self::assertSame($original, self::convert($content, $schemas, $original));
     }
 
     #[TestDox('Returns scalar content as-is without fetching.')]
@@ -1100,7 +1105,7 @@ final class ContentResolverTest extends TestCase
                 'title' => 'Hello',
                 'url' => self::createMultilink('/pricing'),
             ],
-            self::createResolver()->create(
+            self::convert(
                 [
                     '_component' => 'banner',
                     'title' => 'Hello',
@@ -1121,7 +1126,7 @@ final class ContentResolverTest extends TestCase
                 'component' => 'banner',
                 'title' => 'https://example.com',
             ],
-            self::createResolver()->create(
+            self::convert(
                 [
                     '_component' => 'banner',
                     'title' => 'https://example.com',
@@ -1197,7 +1202,7 @@ final class ContentResolverTest extends TestCase
                     ],
                 ],
             ],
-            self::createResolver()->create(
+            self::convert(
                 [
                     '_component' => 'section',
                     'cards' => [
@@ -1262,7 +1267,7 @@ final class ContentResolverTest extends TestCase
                 'component' => 'banner',
                 'url' => $link,
             ],
-            self::createResolver()->create(
+            self::convert(
                 [
                     '_component' => 'banner',
                     'url' => $link['cached_url'],
@@ -1316,7 +1321,7 @@ final class ContentResolverTest extends TestCase
                 'component' => 'testimonials-section',
                 'featured' => self::createStory(2),
             ],
-            self::createResolver()->create(
+            self::convert(
                 [
                     '_component' => 'testimonials-section',
                     'featured' => self::createStory(2)['uuid'],
@@ -1341,7 +1346,7 @@ final class ContentResolverTest extends TestCase
                 'component' => 'testimonials-section',
                 'testimonials' => [self::createStory(3)['uuid'], self::createStory(2), self::createStory(1)],
             ],
-            self::createResolver()->create(
+            self::convert(
                 [
                     '_component' => 'testimonials-section',
                     'testimonials' => [
@@ -1370,7 +1375,7 @@ final class ContentResolverTest extends TestCase
                 'featured' => self::createStory(1)['uuid'],
                 'testimonials' => [self::createStory(2)['uuid']],
             ],
-            self::createResolver()->create(
+            self::convert(
                 [
                     '_component' => 'testimonials-section',
                     'featured' => self::createStory(1)['uuid'],
@@ -1397,7 +1402,7 @@ final class ContentResolverTest extends TestCase
                 'component' => 'testimonials-section',
                 'featured' => 'Not a UUID',
             ],
-            self::createResolver()->create(
+            self::convert(
                 [
                     '_component' => 'testimonials-section',
                     'featured' => 'Not a UUID',
@@ -1560,6 +1565,20 @@ final class ContentResolverTest extends TestCase
             ],
             'definitions' => [],
         ];
+    }
+
+    /**
+     * Resolves a marker whose slot has the given content, in place of the original content.
+     *
+     * @param array<string, mixed>|null $schemas
+     * @param array<string, mixed>      $original
+     */
+    private static function convert(mixed $content, ?array $schemas, array $original = []): mixed
+    {
+        return self::createResolver()->resolve(
+            ['croct' => 'slot-id', ...$original],
+            static fn (string $id): FetchResponse => self::createResponse($content, $schemas),
+        );
     }
 
     private static function createResolver(): ContentResolver
