@@ -102,6 +102,94 @@ final class CroctStoriesApiTest extends TestCase
         );
     }
 
+    #[TestDox('Keeps the block content when Croct returns the default content of the slot.')]
+    public function testKeepsBlockContentForSlotDefault(): void
+    {
+        $api = $this->createMock(StoriesApi::class);
+        $api->method('bySlug')->willReturn(self::createStoryResponse([
+            'body' => [
+                [
+                    'croct' => 'home-banner',
+                    'component' => 'banner',
+                    'headline' => 'Original',
+                ],
+            ],
+        ]));
+
+        $plug = $this->createMock(Plug::class);
+        $plug->method('fetchContent')->willReturn(self::createBannerResponse('Default', ContentSource::SLOT));
+
+        self::assertEquals(
+            [
+                'body' => [
+                    [
+                        'component' => 'banner',
+                        'headline' => 'Original',
+                    ],
+                ],
+            ],
+            $this->createApi($api, $plug)->bySlug('home')->story,
+        );
+    }
+
+    #[TestDox('Resolves story relations with the related stories of the response.')]
+    public function testResolvesStoryRelationsWithRelatedStories(): void
+    {
+        $first = self::createStory('11111111-1111-4111-8111-111111111111');
+        $second = self::createStory('22222222-2222-4222-8222-222222222222');
+
+        $api = $this->createMock(StoriesApi::class);
+        $api->method('bySlug')->willReturn(self::createStoryResponse(
+            [
+                'body' => [
+                    [
+                        'croct' => 'testimonials',
+                        'component' => 'testimonials',
+                        'items' => [$first],
+                    ],
+                ],
+            ],
+            [$first, $second],
+        ));
+
+        $plug = $this->createMock(Plug::class);
+        $plug->method('fetchContent')->willReturn(new FetchResponse(
+            [
+                '_component' => 'testimonials',
+                'items' => [$second['uuid'], $first['uuid']],
+            ],
+            new SlotMetadata(version: '1', contentSource: ContentSource::EXPERIENCE, schema: [
+                'root' => [
+                    'type' => 'structure',
+                    'attributes' => [
+                        'items' => [
+                            'type' => [
+                                'type' => 'list',
+                                'items' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'definitions' => [],
+            ]),
+        ));
+
+        self::assertEquals(
+            [
+                'body' => [
+                    [
+                        '_uid' => self::UID,
+                        'component' => 'testimonials',
+                        'items' => [$second, $first],
+                    ],
+                ],
+            ],
+            $this->createApi($api, $plug)->bySlug('home')->story,
+        );
+    }
+
     #[TestDox('Resolves a story fetched by UUID.')]
     public function testResolvesByUuid(): void
     {
@@ -238,14 +326,31 @@ final class CroctStoriesApiTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $story
+     * @return array<string, mixed>
      */
-    private static function createStoryResponse(array $story): StoryResponse
+    private static function createStory(string $uuid): array
+    {
+        return [
+            'uuid' => $uuid,
+            'name' => 'Testimonial',
+            'full_slug' => 'testimonials/' . $uuid,
+            'content' => [
+                '_uid' => 'testimonial-uid',
+                'component' => 'testimonial',
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed>       $story
+     * @param list<array<string, mixed>> $relatedStories
+     */
+    private static function createStoryResponse(array $story, array $relatedStories = []): StoryResponse
     {
         return new StoryResponse([
             'story' => $story,
             'cv' => 1,
-            'rels' => [],
+            'rels' => $relatedStories,
             'rel_uuids' => [],
             'links' => [],
         ]);
@@ -272,14 +377,16 @@ final class CroctStoriesApiTest extends TestCase
     /**
      * @return FetchResponse<array<string, mixed>, mixed, bool>
      */
-    private static function createBannerResponse(string $headline): FetchResponse
-    {
+    private static function createBannerResponse(
+        string $headline,
+        ContentSource $source = ContentSource::EXPERIENCE,
+    ): FetchResponse {
         return new FetchResponse(
             [
                 '_component' => 'banner',
                 'headline' => $headline,
             ],
-            new SlotMetadata(version: '1', contentSource: ContentSource::SLOT, schema: [
+            new SlotMetadata(version: '1', contentSource: $source, schema: [
                 'root' => [
                     'type' => 'structure',
                     'attributes' => [
