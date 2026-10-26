@@ -7,6 +7,7 @@ namespace Croct\Plug\Storyblok;
 use Croct\Plug\Exception\CroctException;
 use Croct\Plug\FetchResponse;
 use Croct\Plug\Uuid;
+use League\CommonMark\Exception\CommonMarkException;
 
 /**
  * Converts Croct content to the Storyblok shape.
@@ -19,12 +20,15 @@ final class ContentResolver
     /** @var callable(): string */
     private $uidGenerator;
 
+    private RichTextParser $richTextParser;
+
     /**
      * @param (callable(): string)|null $uidGenerator Generates the `_uid` of each structure.
      */
     public function __construct(?callable $uidGenerator = null)
     {
         $this->uidGenerator = $uidGenerator ?? static fn (): string => Uuid::random()->toString();
+        $this->richTextParser = new RichTextParser();
     }
 
     /**
@@ -108,7 +112,7 @@ final class ContentResolver
         }
 
         if (\is_string($content)) {
-            return self::convertString($content, $definition);
+            return $this->convertString($content, $definition);
         }
 
         if (\is_array($content)) {
@@ -295,9 +299,18 @@ final class ContentResolver
      *
      * @return array<array-key, mixed>|string|null
      */
-    private static function convertString(string $content, array $definition): array|string|null
+    private function convertString(string $content, array $definition): array|string|null
     {
         $type = $definition['type'] ?? null;
+
+        // Rich text is stored as Markdown in Croct, while Storyblok expects a rich text document.
+        if ($type === 'reference' && ($definition['id'] ?? null) === '@croct/richText') {
+            try {
+                return $this->richTextParser->parse($content);
+            } catch (CommonMarkException) {
+                return null;
+            }
+        }
 
         if ($type === 'reference' && ($definition['id'] ?? null) === '@croct/file') {
             return [

@@ -383,6 +383,45 @@ final class ContentResolverTest extends TestCase
                     ],
                 ],
             ],
+            'a rich text attribute' => [
+                'content' => [
+                    '_component' => 'article',
+                    'body' => '**Lorem** ipsum',
+                ],
+                'schemas' => self::createStructureSchema('body', [
+                    'type' => 'reference',
+                    'id' => '@croct/richText',
+                    'properties' => [
+                        'format' => 'multiline',
+                        'allowedFormatting' => ['bold'],
+                    ],
+                ]),
+                'expected' => [
+                    '_uid' => self::RANDOM_UUID,
+                    'component' => 'article',
+                    'body' => [
+                        'type' => 'doc',
+                        'content' => [
+                            [
+                                'type' => 'paragraph',
+                                'content' => [
+                                    [
+                                        'type' => 'text',
+                                        'text' => 'Lorem',
+                                        'marks' => [
+                                            ['type' => 'bold'],
+                                        ],
+                                    ],
+                                    [
+                                        'type' => 'text',
+                                        'text' => ' ipsum',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -606,6 +645,16 @@ final class ContentResolverTest extends TestCase
                 ],
                 'schemas' => self::createStructureSchema('items', [
                     'type' => 'list',
+                ]),
+            ],
+            'a rich text attribute that is not valid UTF-8' => [
+                'content' => [
+                    '_component' => 'article',
+                    'body' => "\xFF",
+                ],
+                'schemas' => self::createStructureSchema('body', [
+                    'type' => 'reference',
+                    'id' => '@croct/richText',
                 ]),
             ],
         ];
