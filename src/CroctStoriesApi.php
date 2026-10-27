@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Croct\Plug\Storyblok;
 
+use Croct\Plug\Content\ContentSource;
 use Croct\Plug\FetchOptions;
 use Croct\Plug\FetchResponse;
 use Croct\Plug\Plug;
@@ -79,7 +80,7 @@ final class CroctStoriesApi implements StoriesApi
     private function resolveStory(StoryResponse $response, string $language): StoryResponse
     {
         return new StoryResponse([
-            'story' => $this->resolver->resolve($response->story, $this->createFetcher($language)),
+            'story' => $this->resolver->resolve($response->story, $this->createFetcher($language), $response->rels),
             'cv' => $response->cv,
             'rels' => $response->rels,
             'rel_uuids' => $response->relUuids,
@@ -94,7 +95,7 @@ final class CroctStoriesApi implements StoriesApi
         $stories = [];
 
         foreach ($response->stories as $story) {
-            $stories[] = $this->resolver->resolve($story, $fetcher);
+            $stories[] = $this->resolver->resolve($story, $fetcher, $response->rels);
         }
 
         return new StoriesResponse($response->total, $response->pagination, [
@@ -110,7 +111,7 @@ final class CroctStoriesApi implements StoriesApi
      * Builds the slot fetcher for the given language, always requesting the content schema so the
      * conversion to the Storyblok shape can be schema-driven.
      *
-     * @return callable(string): FetchResponse<array<string, mixed>, never, true>
+     * @return callable(string): ?FetchResponse<array<string, mixed>, never, true>
      */
     private function createFetcher(string $language): callable
     {
@@ -121,7 +122,16 @@ final class CroctStoriesApi implements StoriesApi
             $options = $options->withPreferredLocale($language);
         }
 
-        return fn (string $slotId): FetchResponse => $this->plug->fetchContent($slotId, $options);
+        return function (string $slotId) use ($options): ?FetchResponse {
+            $response = $this->plug->fetchContent($slotId, $options);
+
+            // Without a matching experience or experiment, the original Storyblok content is kept
+            if ($response->getMetadata()?->getContentSource() === ContentSource::SLOT) {
+                return null;
+            }
+
+            return $response;
+        };
     }
 
     private static function resolveLanguage(StoryRequest|StoriesRequest|null $request): string

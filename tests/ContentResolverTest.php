@@ -383,6 +383,45 @@ final class ContentResolverTest extends TestCase
                     ],
                 ],
             ],
+            'a rich text attribute' => [
+                'content' => [
+                    '_component' => 'article',
+                    'body' => '**Lorem** ipsum',
+                ],
+                'schemas' => self::createStructureSchema('body', [
+                    'type' => 'reference',
+                    'id' => '@croct/richText',
+                    'properties' => [
+                        'format' => 'multiline',
+                        'allowedFormatting' => ['bold'],
+                    ],
+                ]),
+                'expected' => [
+                    '_uid' => self::RANDOM_UUID,
+                    'component' => 'article',
+                    'body' => [
+                        'type' => 'doc',
+                        'content' => [
+                            [
+                                'type' => 'paragraph',
+                                'content' => [
+                                    [
+                                        'type' => 'text',
+                                        'text' => 'Lorem',
+                                        'marks' => [
+                                            ['type' => 'bold'],
+                                        ],
+                                    ],
+                                    [
+                                        'type' => 'text',
+                                        'text' => ' ipsum',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -395,7 +434,7 @@ final class ContentResolverTest extends TestCase
     #[TestDox('Converts Croct content to the Storyblok shape.')]
     public function testConvertsContent(array $content, array $schemas, array $expected): void
     {
-        self::assertEquals($expected, self::createResolver()->create($content, $schemas));
+        self::assertEquals($expected, self::convert($content, $schemas));
     }
 
     /**
@@ -608,6 +647,16 @@ final class ContentResolverTest extends TestCase
                     'type' => 'list',
                 ]),
             ],
+            'a rich text attribute that is not valid UTF-8' => [
+                'content' => [
+                    '_component' => 'article',
+                    'body' => "\xFF",
+                ],
+                'schemas' => self::createStructureSchema('body', [
+                    'type' => 'reference',
+                    'id' => '@croct/richText',
+                ]),
+            ],
         ];
 
         $mismatches = [
@@ -749,10 +798,15 @@ final class ContentResolverTest extends TestCase
      * @param array<string, mixed>|null $schemas
      */
     #[DataProvider('getUnsupportedScenarios')]
-    #[TestDox('Returns null for content that cannot be converted.')]
-    public function testReturnsNullForUnsupportedContent(array $content, ?array $schemas): void
+    #[TestDox('Keeps the original content when the content cannot be converted.')]
+    public function testKeepsOriginalForUnsupportedContent(array $content, ?array $schemas): void
     {
-        self::assertNull(self::createResolver()->create($content, $schemas));
+        $original = [
+            'component' => 'page',
+            'title' => 'Original',
+        ];
+
+        self::assertSame($original, self::convert($content, $schemas, $original));
     }
 
     #[TestDox('Returns scalar content as-is without fetching.')]
@@ -1025,6 +1079,505 @@ final class ContentResolverTest extends TestCase
                 'fallbackData' => 123,
             ],
             self::createResolver()->resolve($content, $fetcher),
+        );
+    }
+
+    #[TestDox('Converts a plain text to a link when the original content is a link.')]
+    public function testConvertsTextToLinkBasedOnOriginal(): void
+    {
+        $original = [
+            '_uid' => 'original-uid',
+            'component' => 'banner',
+            'title' => 'Original',
+            'url' => [
+                'id' => 'abc',
+                'linktype' => 'story',
+                'fieldtype' => 'multilink',
+                'url' => '',
+                'cached_url' => 'home',
+            ],
+        ];
+
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'banner',
+                'title' => 'Hello',
+                'url' => self::createMultilink('/pricing'),
+            ],
+            self::convert(
+                [
+                    '_component' => 'banner',
+                    'title' => 'Hello',
+                    'url' => '/pricing',
+                ],
+                self::createBannerSchema(),
+                $original,
+            ),
+        );
+    }
+
+    #[TestDox('Keeps a plain text as text when the original content is not a link.')]
+    public function testKeepsTextWhenOriginalIsNotLink(): void
+    {
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'banner',
+                'title' => 'https://example.com',
+            ],
+            self::convert(
+                [
+                    '_component' => 'banner',
+                    'title' => 'https://example.com',
+                ],
+                self::createBannerSchema(),
+                [
+                    '_uid' => 'original-uid',
+                    'component' => 'banner',
+                    'title' => 'Original text',
+                ],
+            ),
+        );
+    }
+
+    #[TestDox('Converts nested plain texts to links based on the matching original content.')]
+    public function testConvertsNestedTextsToLinksBasedOnOriginal(): void
+    {
+        $schema = [
+            'root' => [
+                'type' => 'structure',
+                'attributes' => [
+                    'cards' => [
+                        'type' => [
+                            'type' => 'list',
+                            'items' => [
+                                'type' => 'reference',
+                                'id' => 'card',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'definitions' => [
+                'card' => [
+                    'type' => 'structure',
+                    'attributes' => [
+                        'link' => [
+                            'type' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $original = [
+            '_uid' => 'original-uid',
+            'component' => 'section',
+            'cards' => [
+                [
+                    '_uid' => 'card-1',
+                    'component' => 'card',
+                    'link' => self::createMultilink('/original-first'),
+                ],
+            ],
+        ];
+
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'section',
+                'cards' => [
+                    [
+                        '_uid' => self::RANDOM_UUID,
+                        'component' => 'card',
+                        'link' => self::createMultilink('/first'),
+                    ],
+                    [
+                        '_uid' => self::RANDOM_UUID,
+                        'component' => 'card',
+                        'link' => '/second',
+                    ],
+                ],
+            ],
+            self::convert(
+                [
+                    '_component' => 'section',
+                    'cards' => [
+                        [
+                            '_component' => 'card',
+                            'link' => '/first',
+                        ],
+                        [
+                            '_component' => 'card',
+                            'link' => '/second',
+                        ],
+                    ],
+                ],
+                $schema,
+                $original,
+            ),
+        );
+    }
+
+    /**
+     * @return array<string, array{link: array<string, mixed>}>
+     */
+    public static function getOriginalLinkScenarios(): array
+    {
+        return [
+            'a story link' => [
+                'link' => [
+                    'id' => 'story-uuid',
+                    'url' => '',
+                    'linktype' => 'story',
+                    'fieldtype' => 'multilink',
+                    'cached_url' => 'about',
+                    'story' => [
+                        'name' => 'About',
+                        'full_slug' => 'about',
+                    ],
+                ],
+            ],
+            'a URL link' => [
+                'link' => [
+                    'id' => '',
+                    'url' => 'https://example.com',
+                    'target' => '_blank',
+                    'linktype' => 'url',
+                    'fieldtype' => 'multilink',
+                    'cached_url' => 'https://example.com',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $link
+     */
+    #[DataProvider('getOriginalLinkScenarios')]
+    #[TestDox('Keeps the original link when the value matches its cached URL.')]
+    public function testKeepsOriginalLinkWhenUnchanged(array $link): void
+    {
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'banner',
+                'url' => $link,
+            ],
+            self::convert(
+                [
+                    '_component' => 'banner',
+                    'url' => $link['cached_url'],
+                ],
+                self::createBannerSchema(),
+                [
+                    '_uid' => 'original-uid',
+                    'component' => 'banner',
+                    'url' => $link,
+                ],
+            ),
+        );
+    }
+
+    #[TestDox('Converts plain texts to links based on the marker content.')]
+    public function testConvertsTextsToLinksBasedOnMarkerContent(): void
+    {
+        $fetcher = static fn (string $id): FetchResponse => self::createResponse(
+            [
+                '_component' => 'banner',
+                'title' => 'Welcome!',
+                'url' => '/welcome',
+            ],
+            self::createBannerSchema(),
+        );
+
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'banner',
+                'title' => 'Welcome!',
+                'url' => self::createMultilink('/welcome'),
+            ],
+            self::createResolver()->resolve(
+                [
+                    'croct' => 'slot-id',
+                    'title' => 'Original',
+                    'url' => self::createMultilink('/original'),
+                ],
+                $fetcher,
+            ),
+        );
+    }
+
+    #[TestDox('Resolves a story relation to the story in the original content.')]
+    public function testResolvesStoryRelation(): void
+    {
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'testimonials-section',
+                'featured' => self::createStory(2),
+            ],
+            self::convert(
+                [
+                    '_component' => 'testimonials-section',
+                    'featured' => self::createStory(2)['uuid'],
+                ],
+                self::createRelationSchema(),
+                [
+                    '_uid' => 'original-uid',
+                    'component' => 'testimonials-section',
+                    'featured' => self::createStory(1),
+                    'testimonials' => [self::createStory(2)],
+                ],
+            ),
+        );
+    }
+
+    #[TestDox('Resolves the items of a story relation regardless of their order and count.')]
+    public function testResolvesStoryRelationItems(): void
+    {
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'testimonials-section',
+                'testimonials' => [self::createStory(3)['uuid'], self::createStory(2), self::createStory(1)],
+            ],
+            self::convert(
+                [
+                    '_component' => 'testimonials-section',
+                    'testimonials' => [
+                        self::createStory(3)['uuid'],
+                        self::createStory(2)['uuid'],
+                        self::createStory(1)['uuid'],
+                    ],
+                ],
+                self::createRelationSchema(),
+                [
+                    '_uid' => 'original-uid',
+                    'component' => 'testimonials-section',
+                    'testimonials' => [self::createStory(1), self::createStory(2)],
+                ],
+            ),
+        );
+    }
+
+    #[TestDox('Keeps the UUIDs of a story relation that is not resolved in the original content.')]
+    public function testKeepsUnresolvedStoryRelation(): void
+    {
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'testimonials-section',
+                'featured' => self::createStory(1)['uuid'],
+                'testimonials' => [self::createStory(2)['uuid']],
+            ],
+            self::convert(
+                [
+                    '_component' => 'testimonials-section',
+                    'featured' => self::createStory(1)['uuid'],
+                    'testimonials' => [self::createStory(2)['uuid']],
+                ],
+                self::createRelationSchema(),
+                [
+                    '_uid' => 'original-uid',
+                    'component' => 'testimonials-section',
+                    'featured' => self::createStory(1)['uuid'],
+                    'testimonials' => [self::createStory(2)['uuid']],
+                    'other' => [self::createStory(1), self::createStory(2)],
+                ],
+            ),
+        );
+    }
+
+    #[TestDox('Keeps a text that is not a UUID even if the original content is a story.')]
+    public function testKeepsTextWhenOriginalIsStory(): void
+    {
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'testimonials-section',
+                'featured' => 'Not a UUID',
+            ],
+            self::convert(
+                [
+                    '_component' => 'testimonials-section',
+                    'featured' => 'Not a UUID',
+                ],
+                self::createRelationSchema(),
+                [
+                    '_uid' => 'original-uid',
+                    'component' => 'testimonials-section',
+                    'featured' => self::createStory(1),
+                ],
+            ),
+        );
+    }
+
+    #[TestDox('Resolves story relations with the stories anywhere in the content or among the related stories.')]
+    public function testResolvesStoryRelationsFromContentAndRelatedStories(): void
+    {
+        $content = [
+            'body' => [
+                [
+                    'croct' => 'testimonials',
+                    'component' => 'testimonials-section',
+                    'testimonials' => [self::createStory(1)],
+                ],
+            ],
+            'featured' => self::createStory(2),
+        ];
+
+        self::assertEquals(
+            [
+                'body' => [
+                    [
+                        '_uid' => self::RANDOM_UUID,
+                        'component' => 'testimonials-section',
+                        'testimonials' => [self::createStory(1), self::createStory(2), self::createStory(3)],
+                    ],
+                ],
+                'featured' => self::createStory(2),
+            ],
+            self::createResolver()->resolve($content, self::createRelationFetcher(), [self::createStory(3)]),
+        );
+    }
+
+    #[TestDox('Keeps the UUIDs of related stories that are not available.')]
+    public function testKeepsUnavailableStoryRelations(): void
+    {
+        $content = [
+            'croct' => 'testimonials',
+            'component' => 'testimonials-section',
+            'testimonials' => [self::createStory(1)],
+        ];
+
+        self::assertEquals(
+            [
+                '_uid' => self::RANDOM_UUID,
+                'component' => 'testimonials-section',
+                'testimonials' => [
+                    self::createStory(1),
+                    self::createStory(2)['uuid'],
+                    self::createStory(3)['uuid'],
+                ],
+            ],
+            self::createResolver()->resolve($content, self::createRelationFetcher()),
+        );
+    }
+
+    /**
+     * @return callable(string): FetchResponse<mixed, mixed, bool>
+     */
+    private static function createRelationFetcher(): callable
+    {
+        return static fn (string $id): FetchResponse => self::createResponse(
+            [
+                '_component' => 'testimonials-section',
+                'testimonials' => [
+                    self::createStory(1)['uuid'],
+                    self::createStory(2)['uuid'],
+                    self::createStory(3)['uuid'],
+                ],
+            ],
+            self::createRelationSchema(),
+        );
+    }
+
+    /**
+     * @return array{uuid: string, name: string, full_slug: string, content: array<string, mixed>}
+     */
+    private static function createStory(int $number): array
+    {
+        $digit = (string) $number;
+
+        return [
+            // A valid UUID made of the story number, such as 11111111-1111-4111-8111-111111111111
+            'uuid' => \sprintf(
+                '%s-%s-4%s-8%s-%s',
+                \str_repeat($digit, 8),
+                \str_repeat($digit, 4),
+                \str_repeat($digit, 3),
+                \str_repeat($digit, 3),
+                \str_repeat($digit, 12),
+            ),
+            'name' => 'Story ' . $number,
+            'full_slug' => 'testimonials/story-' . $number,
+            'content' => [
+                '_uid' => 'story-uid-' . $number,
+                'component' => 'testimonial',
+                'quote' => 'Quote ' . $number,
+            ],
+        ];
+    }
+
+    /**
+     * @return array{root: array<string, mixed>, definitions: array<string, mixed>}
+     */
+    private static function createRelationSchema(): array
+    {
+        return [
+            'root' => [
+                'type' => 'structure',
+                'attributes' => [
+                    'featured' => [
+                        'type' => [
+                            'type' => 'text',
+                        ],
+                    ],
+                    'testimonials' => [
+                        'type' => [
+                            'type' => 'list',
+                            'items' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'definitions' => [],
+        ];
+    }
+
+    /**
+     * @return array{root: array<string, mixed>, definitions: array<string, mixed>}
+     */
+    private static function createBannerSchema(): array
+    {
+        return [
+            'root' => [
+                'type' => 'structure',
+                'attributes' => [
+                    'title' => [
+                        'type' => [
+                            'type' => 'text',
+                        ],
+                    ],
+                    'url' => [
+                        'type' => [
+                            'type' => 'text',
+                        ],
+                    ],
+                ],
+            ],
+            'definitions' => [],
+        ];
+    }
+
+    /**
+     * Resolves a marker whose slot has the given content, in place of the original content.
+     *
+     * @param array<string, mixed>|null $schemas
+     * @param array<string, mixed>      $original
+     */
+    private static function convert(mixed $content, ?array $schemas, array $original = []): mixed
+    {
+        return self::createResolver()->resolve(
+            ['croct' => 'slot-id', ...$original],
+            static fn (string $id): FetchResponse => self::createResponse($content, $schemas),
         );
     }
 
